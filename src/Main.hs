@@ -30,13 +30,6 @@ printResults results = mapM_ printResult results
                             Left message -> message
                             Right solution -> prettyPrint solution
 
-printResults' :: [Either String Sudoku] -> IO ()
-printResults' results = mapM_ printResult results
-    where printResult eSolution = do
-            putStrLn $ case eSolution of
-                            Left message -> message
-                            Right solution -> prettyPrint solution
-
 {-|
 Parse multiple grids and returns the corresponding `Sudoku`s.
 -}
