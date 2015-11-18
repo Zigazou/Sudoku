@@ -13,29 +13,51 @@ module Main where
 
 import System.Environment (getArgs)
 import Control.Monad (liftM)
+import Control.Parallel.Strategies (parMap, rpar)
 
-import Sudoku.Sudoku (prettyPrint)
+import Sudoku.Sudoku (Sudoku, prettyPrint)
 import Sudoku.Reader (toSudoku)
 import Sudoku.Solver (repeatBruteReduces)
 
 {-|
-Process Sudokus from `[String]`. It prints the problem and then its solution,
-and continues with the next problem.
+Print results.
 -}
-processSudokus :: [String] -> IO ()
-processSudokus [] = putStrLn "The end!"
-processSudokus grids = do
-    let (sudoku, remaining) = toSudoku grids
+printResults :: [(Sudoku, Either String Sudoku)] -> IO ()
+printResults results = mapM_ printResult results
+    where printResult (problem, eSolution) = do
+            putStrLn $ prettyPrint problem
+            putStrLn $ case eSolution of
+                            Left message -> message
+                            Right solution -> prettyPrint solution
 
-    putStrLn $ prettyPrint sudoku
+printResults' :: [Either String Sudoku] -> IO ()
+printResults' results = mapM_ printResult results
+    where printResult eSolution = do
+            putStrLn $ case eSolution of
+                            Left message -> message
+                            Right solution -> prettyPrint solution
 
-    let solutions = repeatBruteReduces sudoku
-    
-    case solutions of
-         (solution:_) -> putStrLn $ prettyPrint solution
-         _ -> putStrLn "No solution!"
+{-|
+Parse multiple grids and returns the corresponding `Sudoku`s.
+-}
+readSudokus :: [String] -> [Sudoku]
+readSudokus [] = []
+readSudokus grids = sudoku:readSudokus remaining
+    where (sudoku, remaining) = toSudoku grids
 
-    processSudokus remaining
+{-|
+Find a solution for one `Sudoku`.
+-}
+findSolution :: Sudoku -> Either String Sudoku
+findSolution sudoku = case repeatBruteReduces sudoku of
+                           (solution:_) -> Right solution
+                           _ -> Left "No solution!"
+
+{-|
+Find each solution for a `List` of `Sudoku`.
+-}
+findSolutions :: [Sudoku] -> [Either String Sudoku]
+findSolutions = parMap rpar findSolution
 
 main :: IO ()
 main = do
@@ -43,4 +65,8 @@ main = do
 
     grids <- liftM lines (readFile filename)
 
-    processSudokus grids
+    let sudokus = readSudokus grids
+        solutions = findSolutions sudokus
+        results = zip sudokus solutions
+
+    printResults results

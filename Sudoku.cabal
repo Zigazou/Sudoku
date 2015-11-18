@@ -17,15 +17,17 @@ cabal-version:       >=1.10
 
 executable Sudoku
   main-is:             Main.hs
-  build-depends:       base >=4.8 && <4.9, array >=0.5 && <0.6, containers
+  build-depends:       base >=4.8 && <4.9, array >=0.5 && <0.6, containers,
+                       parallel, deepseq
   hs-source-dirs:      src
   default-language:    Haskell2010
-  ghc-options:         -Wall
+  ghc-options:         -Wall -O2 -threaded "-with-rtsopts=-N"
 
 executable Sudoku-profile
   main-is:             Main.hs
   ghc-options:         -Wall -O2 -threaded -fprof-auto
                        "-with-rtsopts=-N -p -s -h -i0.1"
-  build-depends:       base >=4.8 && <4.9, array >=0.5 && <0.6, containers
+  build-depends:       base >=4.8 && <4.9, array >=0.5 && <0.6, containers,
+                       parallel, deepseq
   hs-source-dirs:      src
   default-language:    Haskell2010
